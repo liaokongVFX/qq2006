@@ -7,7 +7,8 @@
 import json
 import wx
 
-from com.liaokong.qq.client.my_frame import MyFrame
+from com.liaokong.qq.client.friends_frame import FriendsFrame
+from com.liaokong.qq.client.my_frame import *
 
 
 class LoginFrame(MyFrame):
@@ -69,14 +70,54 @@ class LoginFrame(MyFrame):
 
         # 创建垂直Box布局
         vbox = wx.BoxSizer(wx.VERTICAL)
-        vbox.Add(topimage_sb, -1, wx.CENTER | wx.ALL, wx.EXPAND)
-        vbox.Add(middlepanel, -1, wx.CENTER | wx.ALL, wx.EXPAND, border=5)
-        vbox.Add(hbox, -1, wx.CENTER | wx.ALL, wx.EXPAND, border=1)
+        vbox.Add(topimage_sb, -1, wx.CENTER | wx.EXPAND)
+        vbox.Add(middlepanel, -1, wx.CENTER | wx.ALL | wx.EXPAND, border=5)
+        vbox.Add(hbox, -1, wx.CENTER | wx.BOTTOM, border=1)
 
         self.content_panel.SetSizer(vbox)
 
     def okb_btn_onclick(self, event):
-        pass
+        account = self.accountid_txt.GetValue()
+        password = self.password_txt.GetValue()
+        user = self.login(account, password)
+
+        if user is not None:
+            logger.info("登录成功")
+            next_frame = FriendsFrame(user)
+            next_frame.Show()
+
+            self.Hide()
+
+        else:
+            logger.info("登录失败")
+            dlg = wx.MessageDialog(self, "您QQ号码或者密码不正确", "登录失败", wx.OK | wx.ICON_ERROR)
+            dlg.ShowModal()
+            dlg.Destroy()
 
     def cancel_btn_onclick(self, event):
-        pass
+        # 销毁当前对象
+        self.Destroy()
+        sys.exit(0)
+
+    def login(self, userid, password):
+        json_obj = {}
+        json_obj["command"] = COMMAND_LOGIN
+        json_obj["user_id"] = userid
+        json_obj["user_pwd"] = password
+
+        # JSON编码
+        json_str = json.dumps(json_obj)
+
+        # 给服务器发送数据
+        client_socket.sendto(json_str.encode(), server_address)
+
+        # 从服务器接收到数据
+        json_data, _ = client_socket.recvfrom(1024)
+
+        # JSON解码
+        json_obj = json.loads(json_data.decode())
+        logger.info("从服务器端接收数据：{0}".format(json_obj))
+
+        if json_obj["result"] == "0":
+            # 登录成功
+            return json_obj

@@ -13,8 +13,8 @@ logger = logging.getLogger(__name__)
 
 class BaseDao(object):
     def __init__(self):
-        self.config = configparser.ConfigParser
-        self.config.read("config", encoding="utf-8")
+        self.config = configparser.ConfigParser()
+        self.config.read("config.ini", encoding="utf-8")
 
         host = self.config["db"]["host"]
         port = self.config.getint("db", "port")
